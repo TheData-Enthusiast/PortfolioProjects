@@ -8,14 +8,14 @@ FROM PortfolioProject.dbo.CovidVaccinations$
 ORDER BY 3,4
 
 
---This query returns the range of data we will be working with in the CovidDeaths table
+--This query returns the range of data we will be working within the CovidDeaths table
 
 SELECT location, date, total_cases, new_cases, total_deaths, population
 FROM PortfolioProject.dbo.CovidDeaths$
 ORDER BY location, date --You can either write it as ORDER BY 1,2
 
 -- Now let's calculate the percentage of death related to the number of cases
--- Total cases VS total deaths (Given the number of cases in a location, what is the percentage of death?)
+-- Total cases VS total deaths (Given the number of cases in a location, what is the percentage of deaths?)
 
 SELECT location, date, total_cases, total_deaths, ROUND((total_deaths *1.0/total_cases)*100,2) AS DeathPercentage
 FROM PortfolioProject.dbo.CovidDeaths$
@@ -47,7 +47,7 @@ FROM PortfolioProject.dbo.CovidDeaths$
 WHERE location = 'Cameroon' OR location = 'United States'
 ORDER BY location, date
 
--- After a quick internet search, I came up with this query in order to get rid of the exponential format
+-- After a quick internet search, I came up with this query to get rid of the exponential format
 
 SELECT location, date, population, total_cases,
        FORMAT((total_cases * 1.0 / population) * 100, 'N4') AS DeathPercentagePop
@@ -65,7 +65,7 @@ WHERE total_cases is not null
 GROUP BY location, population
 ORDER BY PercentagePopInfected DESC
 
---Countries with the highest death count per population (How many people actually died from COVID?)
+--Countries with the highest death count per population (How many people died from COVID?)
 
 SELECT location, MAX(total_deaths) AS TotalDeathCount
 FROM PortfolioProject.dbo.CovidDeaths$
@@ -77,7 +77,7 @@ ORDER BY TotalDeathCount DESC
 --LET'S EXPLORE AND FILTER THE DATA PER CONTINENT
 
 
---This query returns the range of data we will be working with in the CovidDeaths table
+--This query returns the range of data we will be working within the CovidDeaths table
 
 SELECT continent, date, total_cases, new_cases, total_deaths, population
 FROM PortfolioProject.dbo.CovidDeaths$
@@ -85,7 +85,7 @@ WHERE continent is not null AND total_cases is not null AND new_cases is not nul
 ORDER BY continent, date
 
 -- Now let's calculate the percentage of death related to the number of cases
--- Total cases VS total deaths (Given the number of cases in a continent, what is the percentage of death?)
+-- Total cases VS total deaths (Given the number of cases in a continent, what is the percentage of deaths?)
 
 SELECT continent, date, total_cases, total_deaths, ROUND((CONVERT(FLOAT,total_deaths) *1.0/CONVERT(FLOAT,total_cases))*100,2) AS DeathPercentage
 FROM PortfolioProject.dbo.CovidDeaths$
@@ -103,7 +103,7 @@ FROM PortfolioProject.dbo.CovidDeaths$
 WHERE continent is not null AND total_cases is not null
 ORDER BY continent, date 
 
---Continents with the highest death count per population (How many people actually died from COVID?)
+--Continents with the highest death count per population (How many people died from COVID?)
 
 SELECT continent, MAX(CAST(total_deaths AS int)) AS TotalDeathCount
 FROM PortfolioProject.dbo.CovidDeaths$
@@ -220,3 +220,47 @@ JOIN PortfolioProject.dbo.CovidVaccinations$ vac
    AND dea.date = vac.date
 WHERE dea.continent is not null AND dea.new_vaccinations is not null
 --ORDER BY 2,3
+
+
+--     QUERIES FOR VISUALIZATION
+
+--Percentage of deaths around the world
+
+SELECT SUM(new_cases) AS TotalCases, SUM(CAST(new_deaths AS int)) AS TotalDeaths, 
+SUM(CAST(new_deaths AS int))/SUM(new_cases) * 100 AS DeathPercentage
+FROM PortfolioProject.dbo.CovidDeaths$
+WHERE continent is not null
+ORDER BY 1,2
+
+--Locations with the highest death count per population (How many people actually died from COVID-19?)
+
+SELECT location, MAX(total_deaths) AS TotalDeathCount
+FROM PortfolioProject.dbo.CovidDeaths$
+WHERE continent is null AND location NOT IN ('World', 'European Union', 'International')
+GROUP BY location
+ORDER BY TotalDeathCount DESC
+
+
+SELECT location, SUM(CAST(total_deaths AS int)) AS TotalDeathCount
+FROM PortfolioProject.dbo.CovidDeaths$
+WHERE continent is null AND location NOT IN ('World', 'European Union', 'International')
+GROUP BY location
+ORDER BY TotalDeathCount DESC
+
+
+SELECT location, population, MAX(total_cases) AS HighestInfectionCount, MAX(total_cases/population) *100 
+       AS PercentagePopInfected
+FROM PortfolioProject.dbo.CovidDeaths$
+--WHERE location = 'Cameroon' OR location = 'United States'
+--WHERE total_cases is not null
+GROUP BY location, population
+ORDER BY PercentagePopInfected DESC
+
+
+SELECT location, population, date, MAX(total_cases) AS HighestInfectionCount, MAX(total_cases/population) *100 
+       AS PercentagePopInfected
+FROM PortfolioProject.dbo.CovidDeaths$
+--WHERE location = 'Cameroon' OR location = 'United States'
+--WHERE total_cases is not null
+GROUP BY location, population, date
+ORDER BY PercentagePopInfected DESC
